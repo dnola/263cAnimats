@@ -18,6 +18,8 @@ GREEN = (  0, 255,   1)
 RED =   (255,   0,   1)
 DARK_RED =   (180,   0,   1)
 
+print("begin")
+
 class Environment:
     def __init__(self):
         self.social_birds = []
