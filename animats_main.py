@@ -9,6 +9,9 @@ import scipy
 import pybrain as pb
 import pybrain.structure as pbs
 from  scipy.spatial.distance import cdist
+import pybrain.tools.shortcuts
+import pybrain.structure.modules as psm
+
 
 pygame.init()
 BLACK = (  0,   0,   1)
@@ -16,9 +19,8 @@ WHITE = (255, 255, 255)
 BLUE =  (  0,   0, 255)
 GREEN = (  0, 255,   1)
 RED =   (255,   0,   1)
+PURPLE =   (255,   0,   255)
 DARK_RED =   (180,   0,   1)
-
-print("begin")
 
 class Environment:
     def __init__(self):
@@ -59,10 +61,10 @@ class Environment:
             bird.update()
 
     def seed_env(self):
-        for i in range(15):
+        for i in range(8):
             b = SocialBird(random.random()*500, random.random()*500, self)
             self.social_birds.append(b)
-        for i in range(50):
+        for i in range(20):
             t = Tree(int(random.random()*self.grid_width),int(random.random()*self.grid_width),self)
             self.trees.append(t)
 
@@ -95,12 +97,13 @@ class Environment:
                 self.social_birds[-3]=self.social_birds[4].breed(self.social_birds[5])
                 self.reset_birds()
 
-            if self.iterations>5000:
+            if self.iterations>2000:
                 self.enable_display=True
             self.update_birds()
 
             if self.enable_display:
                 self.draw_env()
+                time.sleep(1)
         pygame.quit()
 
 
@@ -131,25 +134,32 @@ class Bird:
         pygame.draw.aaline(self.env.win, BLACK, [int(self.x), int(self.y)], [int(self.x+7*math.cos(a)), int(self.y+7*math.sin(a))])
 
 class Tree:
-    def __init__(self,x,y,env,food=10):
+    def __init__(self,x,y,env,food=3,max_food=3):
         self.x=env.grid_size*int(x)+5
         self.y=env.grid_size*int(y)+5
         self.env=env
         self.food=food
+        self.max_food=max_food
 
     def reseed(self):
         self.x=self.env.grid_size*int(int(random.random()*self.env.grid_width))+5
         self.y=self.env.grid_size*int(int(random.random()*self.env.grid_width))+5
 
+    def bite(self):
+        self.food-=1
+        pygame.gfxdraw.filled_circle(self.env.win, self.x, self.y, 5, BLACK)
+        if self.food<=0:
+            self.food=self.max_food
+            self.reseed()
+
     def draw(self):
         pygame.gfxdraw.filled_circle(self.env.win, self.x, self.y, 5, GREEN)
 
-import pybrain.tools.shortcuts
-import pybrain.structure.modules as psm
+
 class SocialBird(Bird):
     def __init__(self,x,y,env,weights=-1,angle=0):
         super().__init__(x,y,env=env,angle=angle)
-        n = pybrain.tools.shortcuts.buildNetwork(3,5,3,hiddenclass=psm.LSTMLayer, outclass=psm.SoftmaxLayer, outputbias=False, recurrent=True)
+        n = pybrain.tools.shortcuts.buildNetwork(5,5,5,hiddenclass=psm.LSTMLayer, outclass=psm.SoftmaxLayer, outputbias=False, recurrent=True)
         if weights!=-1:
             n._setParameters(weights)
         self.network = n
@@ -159,6 +169,7 @@ class SocialBird(Bird):
         self.sound_sensors = [0,0]
         self.flapped = 0
         self.energy = 100
+        self.facing_vector = [0,0]
 
     def breed(self,other):
         e = self.env
@@ -175,11 +186,16 @@ class SocialBird(Bird):
         b = SocialBird(random.random()*e.env_size,random.random()*e.env_size,e,weights=combined)
         return b
 
-    def heard_sound(self,sx,sy):
+    def chirp(self,sn):
+        for bird in self.env.social_birds:
+            if bird!=self:
+                bird.heard_sound(self.x,self.y,sn)
+
+    def heard_sound(self,sx,sy,sn):
         self.sound_origin = [sx,sy]
 
     def run_network(self):
-        actions = self.network.activate(self.sight_sensors)
+        actions = self.network.activate(self.sight_sensors+self.sound_sensors)
 
         if self.flapped>0:
             self.flapped-=1
@@ -191,6 +207,8 @@ class SocialBird(Bird):
             self.velr = actions[action]
         elif action == 1:
             self.velr = -actions[action]
+        elif action == 2 or action==3:
+            self.chirp([actions[2],actions[3]])
         else:
             self.velr*=.5
             self.energy-=1
@@ -207,18 +225,18 @@ class SocialBird(Bird):
         self.y = self.wrap(self.y+ self.vel * math.sin(a))
         self.angle += self.velr
 
-    def update_sight(self):
+    def eat(self,tree_id):
+        if self.energy<50:
+            self.env.trees[tree_id].bite()
+            self.energy=100
+        self.fitness+=1
 
-    def update(self):
+        for bird in self.env.social_birds:
+            self.fitness+=.1
+
+    def update_sight_and_contact(self):
         a = math.radians(self.angle)
         offset = math.radians(10)
-        self.energy-=.01
-
-        if self.energy<0:
-            self.fitness+=self.energy*.1
-
-
-
         num_sight_pts = 15
         self.sight_rays[0] = np.array([(self.wrap(self.x+8*i*math.cos(a)),self.wrap(self.y + 8*i*math.sin(a))) for i in range(num_sight_pts)])
         self.sight_rays[1] = np.array([(self.wrap(self.x+8*i*math.cos(a+offset)),self.wrap(self.y + 8*i*math.sin(a+offset))) for i in range(num_sight_pts)])
@@ -236,37 +254,48 @@ class SocialBird(Bird):
 
                 if distances[i,lmin] < 10:
                     if i==0:
-                        if self.energy<50:
-                            self.env.trees[lmin].reseed()
-                            self.energy=100
-                        self.fitness+=1
+                        self.eat(lmin)
                     self.sight_sensors[idx]=i
                     break
 
+    def update_sound(self):
+        a = math.radians(self.angle)
+
+        dist = ((self.x-self.sound_origin[0])**2 + (self.y-self.sound_origin[1])**2)**.5
+        self.sound_sensors = [-(self.x-self.sound_origin[0])/dist, -(self.y-self.sound_origin[1])/dist]
+        self.facing_vector = [math.cos(a),math.sin(a)]
+
+        ### TODO: Figure out how to get sound sensors to help direct bird to sound ###
 
 
-            # for idx,(x,y) in enumerate(ray):
-            #     for tree in self.env.trees:
-            #         if np.linalg.norm(np.array([x,y])-np.array([tree.x,tree.y]))<10:
-            #             self.sight_sensor_0[0]=idx
 
-        # for tree in self.env.trees:
-        #     if np.linalg.norm(np.array([self.x,self.y])-np.array([tree.x,tree.y]))<10:
-        #         self.fitness+=1
-        #         tree.reseed()
+    def update(self):
+
+        self.energy-=.01
+
+        if self.energy<0:
+            self.fitness+=self.energy*.1
+        self.move()
+        self.update_sight_and_contact()
+        self.update_sound()
 
         self.run_network()
 
     def draw(self):
         super().draw()
+
+        pygame.gfxdraw.line(self.env.win, int(self.x), int(self.y), int(self.x+self.sound_sensors[0]*15), int(self.y+self.sound_sensors[1]*15), BLACK)
+        pygame.gfxdraw.line(self.env.win, int(self.x), int(self.y), int(self.x+self.facing_vector[0]*15), int(self.y+self.facing_vector[1]*15), BLACK)
+
+
+        pygame.gfxdraw.circle(self.env.win, int(self.sound_origin[0]), int(self.sound_origin[1]), 8, PURPLE)
+
         for ray in self.sight_rays:
             for (x,y) in ray:
                 if self.energy>0:
                     pygame.gfxdraw.circle(self.env.win, int(x), int(y), 1, RED)
                 else:
                     pygame.gfxdraw.circle(self.env.win, int(x), int(y), 1, DARK_RED)
-
-
 
 def main():
     e = Environment()
