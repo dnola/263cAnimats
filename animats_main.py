@@ -16,11 +16,11 @@ import pybrain.structure.modules as psm
 pygame.init()
 BLACK = (  0,   0,   1)
 WHITE = (255, 255, 255)
-BLUE =  (  0,   0, 255)
+BLUE = (  0,   0, 255)
 GREEN = (  0, 255,   1)
-RED =   (255,   0,   1)
-PURPLE =   (255,   0,   255)
-DARK_RED =   (180,   0,   1)
+RED = (255,   0,   1)
+PURPLE = (255,   0,   255)
+DARK_RED = (180,   0,   1)
 
 class Environment:
     def __init__(self):
@@ -103,7 +103,7 @@ class Environment:
 
             if self.enable_display:
                 self.draw_env()
-                time.sleep(1)
+                # time.sleep(1)
         pygame.quit()
 
 
