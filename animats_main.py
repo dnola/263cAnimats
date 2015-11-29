@@ -1,23 +1,5 @@
 __author__ = 'davidnola'
-import pygame
-import random
-import math
-import time
-import pygame.gfxdraw
-import numpy as np
-import scipy
-import pybrain as pb
-import pybrain.structure as pbs
-from  scipy.spatial.distance import cdist
-import pybrain.tools.shortcuts
-import pybrain.structure.modules as psm
-import pandas
 import multiprocessing
-
-
-from constants import *
-
-
 
 from environment import Environment
 

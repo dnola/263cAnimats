@@ -1,19 +1,15 @@
-import pygame
-import random
 import math
-import time
-import pygame.gfxdraw
-import numpy as np
-import scipy
-import pybrain as pb
-import pybrain.structure as pbs
-from  scipy.spatial.distance import cdist
-import pybrain.tools.shortcuts
-import pybrain.structure.modules as psm
-import pandas
+import random
 
-from generic_bird import Bird
+import numpy as np
+import pybrain.structure.modules as psm
+import pybrain.tools.shortcuts
+import pygame
+import pygame.gfxdraw
+
 from constants import *
+from generic_bird import Bird
+
 
 class SocialBird(Bird):
     def __init__(self,x,y,env,weights=-1,angle=0,deaf=False):

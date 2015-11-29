@@ -1,18 +1,15 @@
-import pygame
-import random
 import math
-import time
-import pygame.gfxdraw
+import random
+
 import numpy as np
-import scipy
-import pybrain as pb
-import pybrain.structure as pbs
-from  scipy.spatial.distance import cdist
-import pybrain.tools.shortcuts
 import pybrain.structure.modules as psm
-import pandas
+import pybrain.tools.shortcuts
+import pygame
+import pygame.gfxdraw
+from  scipy.spatial.distance import cdist
 
 from constants import *
+
 
 class Bird:
     def __init__(self,x,y,env,angle=0,weights=-1):
