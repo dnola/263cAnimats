@@ -24,8 +24,6 @@ class SocialBird(Bird):
         self.reponse_time_series = []
         self.correlation = []
 
-
-
         self.sound_origin = [x,y]
         self.sound_sensors = [0,0]
         self.sound_direction = [0,0]
@@ -39,20 +37,7 @@ class SocialBird(Bird):
 
 
 
-    def breed(self,other):
-        e = self.env
-        w1 = self.network.params
-        w2 = self.network.params
 
-        crossover = int(random.random()*len(w1))
-        combined = list(w1[:crossover])+list(w2[crossover:])
-        while random.random() < .1:
-            combined[int(random.random()*len(w1))] = random.gauss(0,4)
-        # mask = list(np.random.randint(0,1,size=len(w1)))
-        # combined = [w1[i] if mask[i]==1 else w2[i] for i in range(len(w1))]
-
-        b = SocialBird(random.random()*e.env_size,random.random()*e.env_size,e,weights=combined)
-        return b
 
 
     def chirp(self,sn):
@@ -117,7 +102,6 @@ class SocialBird(Bird):
             self.sound_sensors = [0,0]
 
             self.sound_direction = [0,0]
-
 
     def update(self):
         self.update_sound()

@@ -9,48 +9,9 @@ import pygame.gfxdraw
 from  scipy.spatial.distance import cdist
 
 from constants import *
+from generic_bird import Bird
 
-
-class Bird:
-    def __init__(self,x,y,env,angle=0,weights=-1):
-
-        self.my_id=int(random.randint(0,999999))
-        self.env=env
-
-        n = pybrain.tools.shortcuts.buildNetwork(3,5,3,hiddenclass=psm.LinearLayer, outclass=psm.SigmoidLayer, outputbias=False, recurrent=True)
-        if weights!=-1:
-            n._setParameters(weights)
-        self.network = n
-
-        self.fitness = 0
-        self.energy = 50
-
-        self.x=x
-        self.y=y
-        self.vel = 0
-        self.accel=0
-        self.velr = 0
-        self.angle=angle
-
-        self.sight_rays = [[],[],[]]
-        self.sight_sensors = [0,0,0]
-        self.num_sight_pts = 10
-
-    def breed(self,other):
-        e = self.env
-        w1 = self.network.params
-        w2 = self.network.params
-
-        crossover = int(random.random()*len(w1))
-        combined = list(w1[:crossover])+list(w2[crossover:])
-        while random.random() < .1:
-            combined[int(random.random()*len(w1))] = random.gauss(0,4)
-        # mask = list(np.random.randint(0,1,size=len(w1)))
-        # combined = [w1[i] if mask[i]==1 else w2[i] for i in range(len(w1))]
-
-        b = self.__class__(random.random()*e.env_size,random.random()*e.env_size,e,weights=combined)
-        return b
-
+class PredatorBird(Bird):
     def move(self):
         a = math.radians(self.angle)
         self.vel*=.8
@@ -77,44 +38,13 @@ class Bird:
             self.accel = 3
             self.flapped=20
 
-    def get_nearby_birds(self):
-        nearby = []
-        for bird in self.env.social_birds:
-            if bird.my_id==self.my_id:
-                continue
-
-            dist = ((self.x-bird.x)**2+(self.y-bird.y)**2)**.5
-            if dist<100:
-                nearby.append(bird)
-
-        return nearby
-
-
-    def eat(self,tree_id):
-        if self.energy<70:
+    def eat(self,bird_id):
+        if self.energy<50:
             self.vel*=.5
-            self.env.trees[tree_id].bite()
+            self.env.social_birds[bird_id]=self.env.breed_bird(self.env.social_birds)
             self.energy=100
-            for bird in self.get_nearby_birds():
-                self.fitness+=.5
             self.fitness+=1
 
-
-    def see_food(self,food_coords):
-        for idx,ray in enumerate(self.sight_rays):
-            distances = cdist(ray,food_coords)
-
-            for i in range(self.num_sight_pts):
-                lmin = np.argmin(distances[i,:])
-
-                if distances[0,lmin] < 15:
-                    self.eat(lmin)
-
-                if distances[i,lmin] < 10:
-                    if i==0:
-                        self.eat(lmin)
-                    self.sight_sensors[idx]=self.num_sight_pts-i
-                    break
 
     def init_sight(self):
         a = math.radians(self.angle)
@@ -129,7 +59,7 @@ class Bird:
 
     def update_sight_and_contact(self):
         self.init_sight()
-        self.see_food([[t.x,t.y] for t in self.env.trees])
+        self.see_food([[b.x,b.y] for b in self.env.social_birds])
 
 
     def wrap(self,x):
