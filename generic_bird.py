@@ -17,7 +17,7 @@ class Bird:
         self.my_id=int(random.randint(0,999999))
         self.env=env
 
-        n = pybrain.tools.shortcuts.buildNetwork(4,5,3,hiddenclass=psm.LinearLayer, outclass=psm.SigmoidLayer, outputbias=False, recurrent=True)
+        n = pybrain.tools.shortcuts.buildNetwork(4,5,3,hiddenclass=psm.LSTMLayer, outclass=psm.SigmoidLayer, outputbias=False, recurrent=True)
         if weights!=-1:
             n._setParameters(weights)
         self.network = n
@@ -47,7 +47,7 @@ class Bird:
         crossover = int(random.random()*len(w1))
         combined = list(w1[:crossover])+list(w2[crossover:])
         while random.random() < .1:
-            combined[int(random.random()*len(w1))] = random.gauss(0,4)
+            combined[int(random.random()*len(w1))] = random.gauss(0,np.max(np.fabs(combined)))
         # mask = list(np.random.randint(0,1,size=len(w1)))
         # combined = [w1[i] if mask[i]==1 else w2[i] for i in range(len(w1))]
 

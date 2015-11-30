@@ -12,7 +12,7 @@ import pickle
 
 class Environment:
     def __init__(self,enable_display=False,generation_time=5000,display_on=100000,social_bird_count=16,generic_bird_count=0,
-                 predator_bird_count=4,
+                 predator_bird_count=3,
                  social_bird_pool = None,generic_bird_pool=None,predator_bird_pool=None, sim_length = None,sim_id=-1):
 
         self.social_birds = []
@@ -118,7 +118,7 @@ class Environment:
 
             self.predator_birds.append(b)
 
-        for i in range(10):
+        for i in range(12):
             t = Tree(int(random.random()*self.grid_width),int(random.random()*self.grid_width),self)
             self.trees.append(t)
 
@@ -180,16 +180,9 @@ class Environment:
     def global_panmixia(self):
         self.sort_birds()
         self.collect_statistics()
-
-
         try:
             for i in range(int(self.social_bird_count**.5)):
                 self.social_birds[-(i+1)]=self.breed_bird(self.social_birds)
-
-            if self.social_bird_pool == None:
-                self.social_birds[-1]=SocialBird(random.random()*self.env_size, random.random()*self.env_size, self)
-            else:
-                self.social_birds[-1]=self.breed_bird(self.social_bird_pool)
         except:
             pass
 

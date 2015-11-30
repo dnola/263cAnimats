@@ -17,7 +17,7 @@ class SocialBird(Bird):
         super().__init__(x,y,env=env,angle=angle)
 
         # n = pybrain.tools.shortcuts.buildNetwork(8,10,5,5,hiddenclass=psm.LinearLayer, outclass=psm.SigmoidLayer, outputbias=False, recurrent=True)
-        n = pybrain.tools.shortcuts.buildNetwork(7+chirp_df,20,3+chirp_df,hiddenclass=psm.LSTMLayer, outclass=psm.SigmoidLayer, outputbias=True, recurrent=True)
+        n = pybrain.tools.shortcuts.buildNetwork(7+chirp_df,14,3+chirp_df,hiddenclass=psm.LSTMLayer, outclass=psm.SigmoidLayer, outputbias=False, recurrent=True)
         # n = pybrain.tools.shortcuts.buildNetwork(7+chirp_df,12,8,3+chirp_df,hiddenclass=psm.LinearLayer, outclass=psm.SigmoidLayer, outputbias=True, recurrent=True)
 
         if weights!=-1:

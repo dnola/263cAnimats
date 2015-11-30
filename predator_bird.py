@@ -34,10 +34,11 @@ class PredatorBird(Bird):
             self.flapped=20+random.randint(-17,17)
 
     def eat(self,bird_id):
-        if self.energy<50:
+        if self.energy<30:
+            print("Bird eaten")
             self.vel*=.5
             for bird in self.env.social_birds[bird_id].get_nearby_birds():
-                bird.fitness-=2
+                bird.fitness-=3
             del(self.env.social_birds[bird_id])#=self.env.breed_bird(self.env.social_birds)
             self.energy=100
             self.fitness+=1
@@ -63,7 +64,7 @@ class PredatorBird(Bird):
         return x%self.env.env_size
 
     def update(self):
-        self.energy-=.04
+        self.energy-=.025
 
         if self.energy<0:
             self.energy*=.9
