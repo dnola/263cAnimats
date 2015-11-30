@@ -56,6 +56,9 @@ class Environment:
         self.env_size = 800
         self.grid_size = 10
 
+        self.cov_series = []
+        self.fit_series = []
+
         self.grid_width = self.env_size/self.grid_size
         self.win=None
         if self.win==None and enable_display:
@@ -145,6 +148,8 @@ class Environment:
             df+=pandas.DataFrame(data=bird.correlation,index=headers,columns=headers).fillna(0)
         df = df/float(len(self.social_birds))
         print(df)
+        self.cov_series.append(df)
+
 
         try:
             print("Social:",self.social_birds[0].fitness,self.social_birds[-1].fitness)
@@ -161,11 +166,13 @@ class Environment:
 
     def reset_birds(self):
         fit = 0
+        fits = [0,0]
         for bird in self.social_birds:
             fit+=bird.fitness
             bird.fitness=0 #max(0,bird.fitness)
             bird.energy=50
-        print("Average Social Fitness:",fit/len(self.social_birds))
+        fits[0]=fit/len(self.social_birds)
+        print("Average Social Fitness:",fits[0])
 
         try:
             fit = 0
@@ -173,9 +180,12 @@ class Environment:
                 fit+=bird.fitness
                 bird.fitness=0 #max(0,bird.fitness)
                 bird.energy=max(0,bird.energy)
-            print("Average Predator Fitness:",fit/len(self.predator_birds))
+                fits[1]=fit/len(self.predator_birds)
+            print("Average Predator Fitness:",fits[1])
         except:
             pass
+
+        self.fit_series.append(fits)
 
     def global_panmixia(self):
         self.sort_birds()
@@ -191,6 +201,7 @@ class Environment:
         self.reset_birds()
 
         while len(self.social_birds)<self.social_bird_count:
+            print("adding bird")
             self.social_birds.append(self.breed_bird(self.social_birds))
 
     def dump_best_birds(self):
@@ -239,6 +250,8 @@ class Environment:
 
         self.sort_birds()
         self.dump_best_birds()
+
+        pickle.dump((self.fit_series,self.cov_series),open('stats-%s.pkl'%self.sim_id,'wb'))
         pygame.quit()
 
 

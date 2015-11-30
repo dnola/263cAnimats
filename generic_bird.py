@@ -106,16 +106,14 @@ class Bird:
     def see_food(self,food_coords):
         for idx,ray in enumerate(self.sight_rays):
             distances = cdist(ray,food_coords)
-
+            min = np.argmin(distances,axis=1)
             for i in range(self.num_sight_pts):
-                lmin = np.argmin(distances[i,:])
+                lmin = min[i]
 
                 if distances[0,lmin] < 15:
                     self.eat(lmin)
 
                 if distances[i,lmin] < 10:
-                    if i==0:
-                        self.eat(lmin)
                     self.sight_sensors[idx]=self.num_sight_pts-i
                     break
 

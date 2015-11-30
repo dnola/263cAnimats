@@ -12,6 +12,10 @@ from constants import *
 from generic_bird import Bird
 
 class PredatorBird(Bird):
+    def __init__(self,x,y,env,weights=-1,angle=0):
+        super().__init__(x,y,env,angle=angle,weights=weights)
+        self.num_sight_pts = 7
+
     def run_network(self):
         actions = self.network.activate(self.sight_sensors+self.seen_predator)
 
@@ -43,17 +47,26 @@ class PredatorBird(Bird):
             self.energy=100
             self.fitness+=1
 
+    def see_food(self,food_coords):
+        for idx,ray in enumerate(self.sight_rays):
+            distances = cdist(ray,food_coords)
+            distances_tree = cdist(ray,[(t.x,t.y) for t in self.env.trees])
+            min = np.argmin(distances,axis=1)
+            for i in range(self.num_sight_pts):
+                lmin = min[i]
+                tmin = np.argmin(distances_tree[i,:])
 
-    def init_sight(self):
-        a = math.radians(self.angle)
-        offset = math.radians(12)
+                if distances_tree[i,tmin] < 10:
+                    break
 
-        self.sight_rays[0] = np.array([(self.wrap(self.x+13*i*math.cos(a)),self.wrap(self.y + 13*i*math.sin(a))) for i in range(self.num_sight_pts)])
-        self.sight_rays[1] = np.array([(self.wrap(self.x+13*i*math.cos(a+offset)),self.wrap(self.y + 13*i*math.sin(a+offset))) for i in range(self.num_sight_pts)])
-        self.sight_rays[2] = np.array([(self.wrap(self.x+13*i*math.cos(a-offset)),self.wrap(self.y + 13*i*math.sin(a-offset))) for i in range(self.num_sight_pts)])
+                if distances[0,lmin] < 15:
+                    self.eat(lmin)
 
-
-        self.sight_sensors = [0,0,0]
+                if distances[i,lmin] < 10:
+                    if i==0:
+                        self.eat(lmin)
+                    self.sight_sensors[idx]=self.num_sight_pts-i
+                    break
 
     def update_sight_and_contact(self):
         self.init_sight()
@@ -88,7 +101,11 @@ class PredatorBird(Bird):
         pygame.draw.aaline(self.env.win, DARK_RED, [int(self.x), int(self.y)], [int(self.x+12*math.cos(a)), int(self.y+12*math.sin(a))])
 
         for j,ray in enumerate(self.sight_rays):
+            distances_tree = cdist(ray,[(t.x,t.y) for t in self.env.trees])
             for i, (x,y) in enumerate(ray):
+                tmin = np.argmin(distances_tree[i,:])
+                if distances_tree[i,tmin] < 10:
+                    break
                 if self.num_sight_pts-self.sight_sensors[j]<i:
                     break
                 if self.energy>0:
