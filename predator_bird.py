@@ -34,7 +34,7 @@ class PredatorBird(Bird):
             self.flapped=20+random.randint(-17,17)
 
     def eat(self,bird_id):
-        if self.energy<30:
+        if (self.energy<30 and random.random()>.8) or random.random()>.999:
             print("Bird eaten")
             self.vel*=.5
             for bird in self.env.social_birds[bird_id].get_nearby_birds():

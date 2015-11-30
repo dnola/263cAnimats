@@ -14,7 +14,7 @@ def load_social_birds():
 
 
 def run_day(proc_id,warm_start=False):
-    generation_time=500
+    generation_time=5000
     display_on=550000
     sim_length = 500000
 

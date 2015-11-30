@@ -11,7 +11,7 @@ from generic_bird import Bird
 import pickle
 
 class Environment:
-    def __init__(self,enable_display=False,generation_time=5000,display_on=100000,social_bird_count=16,generic_bird_count=0,
+    def __init__(self,enable_display=False,generation_time=5000,display_on=100000,social_bird_count=24,generic_bird_count=0,
                  predator_bird_count=3,
                  social_bird_pool = None,generic_bird_pool=None,predator_bird_pool=None, sim_length = None,sim_id=-1):
 
