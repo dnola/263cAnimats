@@ -14,8 +14,8 @@ def load_social_birds():
 
 
 def run_day(proc_id,warm_start=False):
-    generation_time=5000
-    display_on=125000
+    generation_time=2000
+    display_on=10000
     sim_length = -1
 
     if not warm_start:

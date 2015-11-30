@@ -38,7 +38,7 @@ class PredatorBird(Bird):
             self.vel*=.5
             for bird in self.env.social_birds[bird_id].get_nearby_birds():
                 bird.fitness-=2
-            self.env.social_birds[bird_id]=self.env.breed_bird(self.env.social_birds)
+            del(self.env.social_birds[bird_id])#=self.env.breed_bird(self.env.social_birds)
             self.energy=100
             self.fitness+=1
 

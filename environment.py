@@ -172,7 +172,7 @@ class Environment:
             for bird in self.predator_birds:
                 fit+=bird.fitness
                 bird.fitness=0 #max(0,bird.fitness)
-                bird.energy=50
+                bird.energy=max(0,bird.energy)
             print("Average Predator Fitness:",fit/len(self.predator_birds))
         except:
             pass
@@ -181,17 +181,25 @@ class Environment:
         self.sort_birds()
         self.collect_statistics()
 
-        for i in range(int(self.social_bird_count**.5)):
-            self.social_birds[-(i+1)]=self.breed_bird(self.social_birds)
 
-        if self.social_bird_pool == None:
-            self.social_birds[-1]=SocialBird(random.random()*self.env_size, random.random()*self.env_size, self)
-        else:
-            self.social_birds[-1]=self.breed_bird(self.social_bird_pool)
+        try:
+            for i in range(int(self.social_bird_count**.5)):
+                self.social_birds[-(i+1)]=self.breed_bird(self.social_birds)
+
+            if self.social_bird_pool == None:
+                self.social_birds[-1]=SocialBird(random.random()*self.env_size, random.random()*self.env_size, self)
+            else:
+                self.social_birds[-1]=self.breed_bird(self.social_bird_pool)
+        except:
+            pass
 
         self.predator_birds[-1]=self.breed_bird(self.predator_birds)
 
         self.reset_birds()
+
+        while len(self.social_birds)<self.social_bird_count:
+            self.social_birds.append(self.breed_bird(self.social_birds))
+
     def dump_best_birds(self):
         print("Dumping birds to pickles...")
         for bird in self.social_birds+self.predator_birds+self.generic_birds:
