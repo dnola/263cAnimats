@@ -86,7 +86,7 @@ class Environment:
             b_2 = int(abs(random.gauss(0,sqrt)))
         while b_1==b_2 or b_2 > count:
             b_2 = int(abs(random.gauss(0,sqrt)))
-
+        print("Breed:",b_1,b_2)
         return bird_list[b_1].breed(bird_list[b_2])
 
     def collect_statistics(self):
@@ -99,16 +99,18 @@ class Environment:
         df = df/float(len(self.social_birds))
         print(df)
 
-    def sort_birds(self):
-        self.social_birds = list(reversed(sorted(self.social_birds)))
-        self.generic_birds = list(reversed(sorted(self.generic_birds)))
-        self.predator_birds = list(reversed(sorted(self.predator_birds)))
         try:
             print("Social:",self.social_birds[0].fitness,self.social_birds[-1].fitness)
             print("Predator:",self.predator_birds[0].fitness,self.predator_birds[-1].fitness)
             print("Generic:",self.generic_birds[0].fitness,self.generic_birds[-1].fitness)
         except:
             pass
+
+    def sort_birds(self):
+        self.social_birds = list(reversed(sorted(self.social_birds)))
+        self.generic_birds = list(reversed(sorted(self.generic_birds)))
+        self.predator_birds = list(reversed(sorted(self.predator_birds)))
+
 
     def reset_birds(self):
         fit = 0
@@ -123,7 +125,7 @@ class Environment:
         self.collect_statistics()
 
         for i in range(int(self.social_bird_count**.5)):
-            self.social_birds[-i+1]=self.breed_bird(self.social_birds)
+            self.social_birds[-(i+1)]=self.breed_bird(self.social_birds)
         self.social_birds[-1]=SocialBird(random.random()*self.env_size, random.random()*self.env_size, self)
 
         self.reset_birds()

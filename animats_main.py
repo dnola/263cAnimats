@@ -4,8 +4,8 @@ import multiprocessing
 from environment import Environment
 
 def run_day(proc_id):
-    generation_time=500
-    display_on=2500
+    generation_time=5000
+    display_on=200000
     sim_length = 150000
 
     if proc_id == 0:
