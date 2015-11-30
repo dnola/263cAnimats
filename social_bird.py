@@ -12,12 +12,13 @@ from generic_bird import Bird
 
 
 class SocialBird(Bird):
-    def __init__(self,x,y,env,weights=-1,angle=0,deaf=False):
+    def __init__(self,x,y,env,weights=-1,angle=0,chirp_df=3):
 
         super().__init__(x,y,env=env,angle=angle)
 
         # n = pybrain.tools.shortcuts.buildNetwork(8,10,5,5,hiddenclass=psm.LinearLayer, outclass=psm.SigmoidLayer, outputbias=False, recurrent=True)
-        n = pybrain.tools.shortcuts.buildNetwork(8,15,5,hiddenclass=psm.LSTMLayer, outclass=psm.SigmoidLayer, outputbias=False, recurrent=True)
+        n = pybrain.tools.shortcuts.buildNetwork(7+chirp_df,20,3+chirp_df,hiddenclass=psm.LSTMLayer, outclass=psm.SigmoidLayer, outputbias=True, recurrent=True)
+        # n = pybrain.tools.shortcuts.buildNetwork(7+chirp_df,12,8,3+chirp_df,hiddenclass=psm.LinearLayer, outclass=psm.SigmoidLayer, outputbias=True, recurrent=True)
 
         if weights!=-1:
             n._setParameters(weights)
@@ -27,14 +28,15 @@ class SocialBird(Bird):
         self.correlation = []
 
         self.sound_origin = [x,y]
-        self.sound_sensors = [0,0]
+        self.sound_sensors = [0 for i in range(chirp_df)]
         self.sound_direction = [0,0]
+        self.chirp_df=chirp_df
 
         self.facing_vector = [0,0]
         self.sound_timer=0
-        self.pattern_heard = [0,0]
+        self.pattern_heard = [0 for i in range(chirp_df)]
 
-        self.flapped = 0
+
         self.chirped = 0
 
 
@@ -49,10 +51,10 @@ class SocialBird(Bird):
         self.sound_timer=300
 
     def run_network(self):
-        actions = self.network.activate(self.sight_sensors+self.sound_sensors+self.pattern_heard+[self.energy])
+        actions = self.network.activate(list(self.sight_sensors)+self.seen_predator+list(self.sound_sensors)+list(self.pattern_heard)+[self.energy])
 
         if random.random()>.9 or len(self.reponse_time_series) < 3:
-            to_add = list(self.sight_sensors+self.sound_sensors+self.pattern_heard+[self.energy]) + list(actions)
+            to_add = list(list(self.sight_sensors)+self.seen_predator+list(self.sound_sensors)+list(self.pattern_heard)+[self.energy]) + list(actions)
             # sight,sight,sight,sound,sound,pattern,pattern,left,right,forward,chirp,chirp
             self.reponse_time_series.append(to_add)
             if len(self.reponse_time_series)>100:
@@ -65,25 +67,26 @@ class SocialBird(Bird):
 
         if self.chirped>0:
             self.chirped-=1
-            actions[3]=min(actions)-.01
-            actions[4]=min(actions)-.01
+            for i in range(self.chirp_df):
+                actions[3+i]=min(actions)-.01
+
 
         action = np.argmax(actions) #2 = flap
 
         if action == 0:
-            self.velr = actions[action]
+            self.velr = actions[action]*1.5
         elif action == 1:
-            self.velr = -actions[action]
+            self.velr = -actions[action]*1.5
         elif action == 2:
             self.velr*=.85
             self.vel*=1.1
             self.energy-=1
-            self.accel = 6+2*actions[action]
+            self.accel = 5+3*actions[action]
             self.flapped=12+random.randint(-10,10)
         else:
             self.energy-=3
-            self.chirp([actions[2],actions[3]])
-            self.chirped=20+random.randint(-15,15)
+            self.chirp(actions[3:4+self.chirp_df])
+            self.chirped=20+random.randint(-10,15)
 
 
     def update_sound(self):

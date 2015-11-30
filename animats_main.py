@@ -15,11 +15,11 @@ def load_social_birds():
 
 def run_day(proc_id,warm_start=False):
     generation_time=5000
-    display_on=100000
-    sim_length = 75000
+    display_on=125000
+    sim_length = -1
 
     if not warm_start:
-        if proc_id == 0:
+        if proc_id <= 0:
             e = Environment(enable_display=False,generation_time=generation_time,display_on=display_on,sim_length=sim_length,sim_id=proc_id)
         else:
             e = Environment(enable_display=False,generation_time=generation_time,display_on=None,sim_length=sim_length,sim_id=proc_id)
@@ -28,11 +28,12 @@ def run_day(proc_id,warm_start=False):
         e = Environment(enable_display=False,generation_time=generation_time,display_on=display_on,sim_length=-1,sim_id=proc_id,social_bird_pool=social_list)
 
 def main():
-    jobs = [multiprocessing.Process(target=run_day,args=(i,)) for i in range(4)]
-    list(map(lambda x:x.start(), jobs))
-    list(map(lambda x:x.join(), jobs))
-    print("\n\n\n\n\n\n Running Final Sim:\n")
-    run_day(-1,True)
+    run_day(-1)
+    # jobs = [multiprocessing.Process(target=run_day,args=(i,)) for i in range(4)]
+    # list(map(lambda x:x.start(), jobs))
+    # list(map(lambda x:x.join(), jobs))
+    # print("\n\n\n\n\n\n Running Final Sim:\n")
+    # run_day(-1,True)
 
 
 main()

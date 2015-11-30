@@ -12,7 +12,7 @@ import pickle
 
 class Environment:
     def __init__(self,enable_display=False,generation_time=5000,display_on=100000,social_bird_count=16,generic_bird_count=0,
-                 predator_bird_count=0,
+                 predator_bird_count=4,
                  social_bird_pool = None,generic_bird_pool=None,predator_bird_pool=None, sim_length = None,sim_id=-1):
 
         self.social_birds = []
@@ -128,17 +128,17 @@ class Environment:
         sqrt = int(len(bird_list)**.5)
         b_1 = int(abs(random.gauss(0,sqrt)))
         b_2 = int(abs(random.gauss(0,sqrt)))
-        while b_1 > count or b_2 > count:
+        while b_1 >= count or b_2 >= count:
             b_1 = int(abs(random.gauss(0,sqrt)))
             b_2 = int(abs(random.gauss(0,sqrt)))
-        while b_1==b_2 or b_2 > count:
+        while b_1==b_2 or b_2 >= count:
             b_2 = int(abs(random.gauss(0,sqrt)))
         # print("Breed:",b_1,b_2)
         return bird_list[b_1].breed(bird_list[b_2])
 
     def collect_statistics(self):
         corr = self.social_birds[0].correlation
-        headers = ["sight","sight","sight","sound","sound" ,"pattern","pattern","energy","left","right","forward","chirp","chirp"]
+        headers = ["sight","sight","sight","predator","sound","sound" ]+self.social_birds[0].chirp_df*["pattern"]+["energy","left","right","forward"] +self.social_birds[0].chirp_df*["chirp"]
         df = pandas.DataFrame(data=corr,index=headers,columns=headers)
         df = df.fillna(0)
         for bird in self.social_birds[1:]:
@@ -165,7 +165,17 @@ class Environment:
             fit+=bird.fitness
             bird.fitness=0 #max(0,bird.fitness)
             bird.energy=50
-        print("Average Fitness:",fit/len(self.social_birds))
+        print("Average Social Fitness:",fit/len(self.social_birds))
+
+        try:
+            fit = 0
+            for bird in self.predator_birds:
+                fit+=bird.fitness
+                bird.fitness=0 #max(0,bird.fitness)
+                bird.energy=50
+            print("Average Predator Fitness:",fit/len(self.predator_birds))
+        except:
+            pass
 
     def global_panmixia(self):
         self.sort_birds()
@@ -179,6 +189,7 @@ class Environment:
         else:
             self.social_birds[-1]=self.breed_bird(self.social_bird_pool)
 
+        self.predator_birds[-1]=self.breed_bird(self.predator_birds)
 
         self.reset_birds()
     def dump_best_birds(self):

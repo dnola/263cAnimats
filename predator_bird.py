@@ -12,35 +12,32 @@ from constants import *
 from generic_bird import Bird
 
 class PredatorBird(Bird):
-    def move(self):
-        a = math.radians(self.angle)
-        self.vel*=.8
-        self.velr*=.95
-        self.vel+=self.accel*.1
-        self.vel = min(15,self.vel)
-        self.vel = max(0.0001,self.vel)
-        self.accel=self.accel-.5
-        self.x = self.wrap(self.x+ self.vel * math.cos(a))
-        self.y = self.wrap(self.y+ self.vel * math.sin(a))
-        self.angle += self.velr
-
     def run_network(self):
-        actions = self.network.activate(self.sight_sensors)
+        actions = self.network.activate(self.sight_sensors+self.seen_predator)
+
+
+        if self.flapped>0:
+            self.flapped-=1
+            actions[2]=min(actions)-.01
+
         action = np.argmax(actions)
 
         if action == 0:
-            self.velr = actions[action]
+            self.velr = actions[action]*.75
         elif action == 1:
-            self.velr = -actions[action]
+            self.velr = -actions[action]*.75
         else:
             self.velr*=.85
-            self.energy-=.1
-            self.accel = 3
-            self.flapped=20
+            self.energy-=1
+            self.accel = 4 + actions[action]
+            self.vel*=1.1
+            self.flapped=20+random.randint(-17,17)
 
     def eat(self,bird_id):
         if self.energy<50:
             self.vel*=.5
+            for bird in self.env.social_birds[bird_id].get_nearby_birds():
+                bird.fitness-=2
             self.env.social_birds[bird_id]=self.env.breed_bird(self.env.social_birds)
             self.energy=100
             self.fitness+=1
@@ -66,11 +63,11 @@ class PredatorBird(Bird):
         return x%self.env.env_size
 
     def update(self):
-        self.energy-=.1
+        self.energy-=.04
 
         if self.energy<0:
             self.energy*=.9
-            self.fitness+=self.energy*.001
+            self.fitness+=self.energy*.0001
         self.move()
 
         self.update_sight_and_contact()
@@ -83,9 +80,11 @@ class PredatorBird(Bird):
     def draw(self):
         a = math.radians(self.angle)
 
-        pygame.gfxdraw.aacircle(self.env.win, int(self.x), int(self.y), 5, (30,   min(255 - int(255*self.energy/100.0),255),  min(255 - int(254*self.energy/100.0),255)))
+        pygame.gfxdraw.aacircle(self.env.win, int(self.x), int(self.y), 8, (150,   min(150 - int(150*self.energy/100.0),255),  min(150 - int(149*self.energy/100.0),255)))
+        pygame.gfxdraw.aacircle(self.env.win, int(self.x), int(self.y), 7, (150,   min(150 - int(150*self.energy/100.0),255),  min(150 - int(149*self.energy/100.0),255)))
+        pygame.gfxdraw.aacircle(self.env.win, int(self.x), int(self.y), 6, (150,   min(150 - int(150*self.energy/100.0),255),  min(150 - int(149*self.energy/100.0),255)))
 
-        pygame.draw.aaline(self.env.win, BLACK, [int(self.x), int(self.y)], [int(self.x+7*math.cos(a)), int(self.y+7*math.sin(a))])
+        pygame.draw.aaline(self.env.win, DARK_RED, [int(self.x), int(self.y)], [int(self.x+12*math.cos(a)), int(self.y+12*math.sin(a))])
 
         for j,ray in enumerate(self.sight_rays):
             for i, (x,y) in enumerate(ray):
