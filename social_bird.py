@@ -16,7 +16,9 @@ class SocialBird(Bird):
 
         super().__init__(x,y,env=env,angle=angle)
 
-        n = pybrain.tools.shortcuts.buildNetwork(8,10,5,5,hiddenclass=psm.LinearLayer, outclass=psm.SigmoidLayer, outputbias=False, recurrent=True)
+        # n = pybrain.tools.shortcuts.buildNetwork(8,10,5,5,hiddenclass=psm.LinearLayer, outclass=psm.SigmoidLayer, outputbias=False, recurrent=True)
+        n = pybrain.tools.shortcuts.buildNetwork(8,15,5,hiddenclass=psm.LSTMLayer, outclass=psm.SigmoidLayer, outputbias=False, recurrent=True)
+
         if weights!=-1:
             n._setParameters(weights)
         self.network = n
@@ -37,9 +39,6 @@ class SocialBird(Bird):
 
 
 
-
-
-
     def chirp(self,sn):
         for bird in self.get_nearby_birds():
             bird.heard_sound(self.x,self.y,sn)
@@ -52,7 +51,7 @@ class SocialBird(Bird):
     def run_network(self):
         actions = self.network.activate(self.sight_sensors+self.sound_sensors+self.pattern_heard+[self.energy])
 
-        if random.random()>.9:
+        if random.random()>.9 or len(self.reponse_time_series) < 3:
             to_add = list(self.sight_sensors+self.sound_sensors+self.pattern_heard+[self.energy]) + list(actions)
             # sight,sight,sight,sound,sound,pattern,pattern,left,right,forward,chirp,chirp
             self.reponse_time_series.append(to_add)

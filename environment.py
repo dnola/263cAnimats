@@ -8,12 +8,46 @@ from constants import *
 from social_bird import SocialBird
 from predator_bird import PredatorBird
 from generic_bird import Bird
+import pickle
 
 class Environment:
-    def __init__(self,enable_display=False,generation_time=5000,display_on=100000,social_bird_count=16,generic_bird_count=0,predator_bird_count=0):
+    def __init__(self,enable_display=False,generation_time=5000,display_on=100000,social_bird_count=16,generic_bird_count=0,
+                 predator_bird_count=0,
+                 social_bird_pool = None,generic_bird_pool=None,predator_bird_pool=None, sim_length = None,sim_id=-1):
+
         self.social_birds = []
         self.generic_birds = []
         self.predator_birds = []
+
+        bird_list = []
+        if not social_bird_pool==None:
+            self.social_bird_pool = list(reversed(sorted(social_bird_pool)))
+            bird_list+=self.social_bird_pool
+        else:
+            self.social_bird_pool=None
+
+        if not generic_bird_pool==None:
+            self.generic_bird_pool = list(reversed(sorted(generic_bird_pool)))
+            bird_list+=self.generic_bird_pool
+        else:
+            self.generic_bird_pool=None
+
+        if not predator_bird_pool==None:
+            self.predator_bird_pool = list(reversed(sorted(predator_bird_pool)))
+            bird_list+=self.predator_bird_pool
+        else:
+            self.predator_bird_pool=None
+
+        for bird in bird_list:
+            bird.env=self
+
+        self.social_bird_count = social_bird_count
+        self.generic_bird_count = generic_bird_count
+        self.predator_bird_count = predator_bird_count
+
+        self.sim_length=sim_length
+        self.sim_id=sim_id
+
         self.iterations = 0
         self.enable_display=enable_display
         self.generation_time=generation_time
@@ -21,20 +55,19 @@ class Environment:
         self.trees = []
         self.env_size = 800
         self.grid_size = 10
-        self.social_bird_count = social_bird_count
-        self.generic_bird_count = generic_bird_count
-        self.predator_bird_count = predator_bird_count
+
         self.grid_width = self.env_size/self.grid_size
         self.win=None
         if self.win==None and enable_display:
             pygame.init()
             self.win = pygame.display.set_mode((800,800))
+
         self.seed_env()
         self.draw_env()
         self.run()
 
     def draw_env(self):
-        if self.enable_display:
+        if self.enable_display and self.win!=None:
             self.win.fill(WHITE)
 
             for i in range(self.grid_size,self.env_size,self.grid_size):
@@ -60,15 +93,29 @@ class Environment:
 
     def seed_env(self):
         for i in range(self.social_bird_count):
-            b = SocialBird(random.random()*self.env_size, random.random()*self.env_size, self)
+
+            if self.social_bird_pool == None:
+                b = SocialBird(random.random()*self.env_size, random.random()*self.env_size, self)
+            else:
+                b = self.breed_bird(self.social_bird_pool)
+
             self.social_birds.append(b)
 
         for i in range(self.generic_bird_count):
-            b = Bird(random.random()*self.env_size, random.random()*self.env_size, self)
+            if self.generic_bird_pool == None:
+                b = Bird(random.random()*self.env_size, random.random()*self.env_size, self)
+            else:
+                b = self.breed_bird(self.generic_bird_pool)
+
             self.generic_birds.append(b)
 
         for i in range(self.predator_bird_count):
-            b = PredatorBird(random.random()*self.env_size, random.random()*self.env_size, self)
+
+            if self.predator_bird_pool == None:
+                b = PredatorBird(random.random()*self.env_size, random.random()*self.env_size, self)
+            else:
+                b = self.breed_bird(self.predator_bird_pool)
+
             self.predator_birds.append(b)
 
         for i in range(10):
@@ -86,7 +133,7 @@ class Environment:
             b_2 = int(abs(random.gauss(0,sqrt)))
         while b_1==b_2 or b_2 > count:
             b_2 = int(abs(random.gauss(0,sqrt)))
-        print("Breed:",b_1,b_2)
+        # print("Breed:",b_1,b_2)
         return bird_list[b_1].breed(bird_list[b_2])
 
     def collect_statistics(self):
@@ -126,9 +173,23 @@ class Environment:
 
         for i in range(int(self.social_bird_count**.5)):
             self.social_birds[-(i+1)]=self.breed_bird(self.social_birds)
-        self.social_birds[-1]=SocialBird(random.random()*self.env_size, random.random()*self.env_size, self)
+
+        if self.social_bird_pool == None:
+            self.social_birds[-1]=SocialBird(random.random()*self.env_size, random.random()*self.env_size, self)
+        else:
+            self.social_birds[-1]=self.breed_bird(self.social_bird_pool)
+
 
         self.reset_birds()
+    def dump_best_birds(self):
+        print("Dumping birds to pickles...")
+        for bird in self.social_birds+self.predator_birds+self.generic_birds:
+            bird.response_time_series = []
+            bird.correlation = []
+
+        pickle.dump(self.social_birds[:int(self.social_bird_count/2)],open("bird_pickles/social-%s.pkl"%self.sim_id,"wb"))
+        pickle.dump(self.predator_birds[:int(self.predator_bird_count/2)],open("bird_pickles/predator-%s.pkl"%self.sim_id,"wb"))
+        pickle.dump(self.generic_birds[:int(self.generic_bird_count/2)],open("bird_pickles/generic-%s.pkl"%self.sim_id,"wb"))
 
     def run(self):
         clock = pygame.time.Clock()
@@ -139,12 +200,16 @@ class Environment:
                     if event.type == pygame.QUIT:
                         running = False
             self.iterations+=1
-            if self.iterations%100==0:
+            if self.iterations%500==0:
                 print(self.iterations)
+
             #############
 
             if self.iterations%self.generation_time==0:
-                self.global_panmixia()
+                if self.sim_length != -1 and self.iterations>self.sim_length:
+                    break
+                else:
+                    self.global_panmixia()
 
             ############
             if self.display_on!= None and self.iterations>self.display_on:
@@ -157,6 +222,11 @@ class Environment:
             if self.enable_display:
                 self.draw_env()
                 # time.sleep(1)
+
+
+
+        self.sort_birds()
+        self.dump_best_birds()
         pygame.quit()
 
 
@@ -175,7 +245,7 @@ class Tree:
 
     def bite(self):
         self.food-=1
-        print("bite")
+        # print("bite")
         if self.food<=0:
             self.food=self.max_food
             self.reseed()
