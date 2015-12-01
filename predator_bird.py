@@ -27,25 +27,29 @@ class PredatorBird(Bird):
         action = np.argmax(actions)
 
         if action == 0:
-            self.velr = actions[action]*.75
+            self.velr = actions[action]*.5
         elif action == 1:
-            self.velr = -actions[action]*.75
+            self.velr = -actions[action]*.5
         else:
             self.velr*=.85
             self.energy-=1
-            self.accel = 4 + actions[action]
+            self.accel = 4 + actions[action]*5
             self.vel*=1.1
             self.flapped=20+random.randint(-17,17)
 
     def eat(self,bird_id):
-        if (self.energy<30 and random.random()>.8) or random.random()>.999:
-            print("Bird eaten")
-            self.vel*=.5
-            for bird in self.env.social_birds[bird_id].get_nearby_birds():
-                bird.fitness-=3
-            del(self.env.social_birds[bird_id])#=self.env.breed_bird(self.env.social_birds)
-            self.energy=100
-            self.fitness+=1
+        if (self.energy<50 and random.random()>(self.env.social_birds[bird_id].energy/100+.1)) or random.random()>.99:
+            try:
+                for bird in self.env.social_birds[bird_id].get_nearby_birds():
+                    bird.fitness-=5
+                print("Bird eaten")
+                self.vel*=.5
+
+                del(self.env.social_birds[bird_id])#=self.env.breed_bird(self.env.social_birds)
+                self.energy=100
+                self.fitness+=1
+            except:
+                print("Error when eating bird")
 
     def see_food(self,food_coords):
         for idx,ray in enumerate(self.sight_rays):
@@ -77,7 +81,7 @@ class PredatorBird(Bird):
         return x%self.env.env_size
 
     def update(self):
-        self.energy-=.025
+        self.energy-=.005
 
         if self.energy<0:
             self.energy*=.9

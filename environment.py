@@ -9,10 +9,11 @@ from social_bird import SocialBird
 from predator_bird import PredatorBird
 from generic_bird import Bird
 import pickle
+import gc
 
 class Environment:
-    def __init__(self,enable_display=False,generation_time=5000,display_on=100000,social_bird_count=24,generic_bird_count=0,
-                 predator_bird_count=3,
+    def __init__(self,enable_display=False,generation_time=5000,display_on=100000,social_bird_count=25,generic_bird_count=0,
+                 predator_bird_count=5,
                  social_bird_pool = None,generic_bird_pool=None,predator_bird_pool=None, sim_length = None,sim_id=-1):
 
         self.social_birds = []
@@ -53,7 +54,7 @@ class Environment:
         self.generation_time=generation_time
         self.display_on = display_on
         self.trees = []
-        self.env_size = 800
+        self.env_size = 1300
         self.grid_size = 10
 
         self.cov_series = []
@@ -63,7 +64,7 @@ class Environment:
         self.win=None
         if self.win==None and enable_display:
             pygame.init()
-            self.win = pygame.display.set_mode((800,800))
+            self.win = pygame.display.set_mode((self.env_size,self.env_size))
 
         self.seed_env()
         self.draw_env()
@@ -121,7 +122,7 @@ class Environment:
 
             self.predator_birds.append(b)
 
-        for i in range(12):
+        for i in range(8):
             t = Tree(int(random.random()*self.grid_width),int(random.random()*self.grid_width),self)
             self.trees.append(t)
 
@@ -170,7 +171,7 @@ class Environment:
         for bird in self.social_birds:
             fit+=bird.fitness
             bird.fitness=0 #max(0,bird.fitness)
-            bird.energy=50
+            bird.energy=50# max(0,bird.energy)
         fits[0]=fit/len(self.social_birds)
         print("Average Social Fitness:",fits[0])
 
@@ -193,6 +194,10 @@ class Environment:
         try:
             for i in range(int(self.social_bird_count**.5)):
                 self.social_birds[-(i+1)]=self.breed_bird(self.social_birds)
+            if random.random()>.8:
+                self.predator_birds[-1]=SocialBird(random.random()*self.env_size, random.random()*self.env_size, self)
+            if random.random()>.8 and self.social_bird_pool != None:
+                self.predator_birds[-2]=self.breed_bird(self.social_bird_pool)
         except:
             pass
 
@@ -203,6 +208,9 @@ class Environment:
         while len(self.social_birds)<self.social_bird_count:
             print("adding bird")
             self.social_birds.append(self.breed_bird(self.social_birds))
+
+        pickle.dump((self.fit_series,self.cov_series),open('stats-%s.pkl'%self.sim_id,'wb'))
+        gc.collect()
 
     def dump_best_birds(self):
         print("Dumping birds to pickles...")
@@ -238,7 +246,7 @@ class Environment:
             if self.display_on!= None and self.iterations>self.display_on:
                 if self.win==None:
                     pygame.init()
-                    self.win = pygame.display.set_mode((800,800))
+                    self.win = pygame.display.set_mode((self.env_size,self.env_size))
                 self.enable_display=True
             self.update_birds()
 
@@ -257,7 +265,7 @@ class Environment:
 
 
 class Tree:
-    def __init__(self,x,y,env,max_food=5):
+    def __init__(self,x,y,env,max_food=15):
         self.x=env.grid_size*int(x)+5
         self.y=env.grid_size*int(y)+5
         self.env=env

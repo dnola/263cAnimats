@@ -17,7 +17,7 @@ class Bird:
         self.my_id=int(random.randint(0,999999))
         self.env=env
 
-        n = pybrain.tools.shortcuts.buildNetwork(4,5,3,hiddenclass=psm.LSTMLayer, outclass=psm.SigmoidLayer, outputbias=False, recurrent=True)
+        n = pybrain.tools.shortcuts.buildNetwork(4,5,3,hiddenclass=psm.LinearLayer, outclass=psm.SigmoidLayer, outputbias=True, recurrent=True)
         if weights!=-1:
             n._setParameters(weights)
         self.network = n
@@ -35,7 +35,7 @@ class Bird:
         self.sight_rays = [[],[],[]]
         self.sight_sensors = [0,0,0]
         self.seen_predator = [0]
-        self.num_sight_pts = 10
+        self.num_sight_pts = 12
 
         self.flapped = 0
 
@@ -87,14 +87,14 @@ class Bird:
                 continue
 
             dist = ((self.x-bird.x)**2+(self.y-bird.y)**2)**.5
-            if dist<100:
+            if dist<225:
                 nearby.append(bird)
 
         return nearby
 
 
     def eat(self,tree_id):
-        if self.energy<70:
+        if self.energy<50:
             self.vel*=.5
             self.env.trees[tree_id].bite()
             self.energy=100
@@ -113,7 +113,7 @@ class Bird:
                 if distances[0,lmin] < 15:
                     self.eat(lmin)
 
-                if distances[i,lmin] < 10:
+                if distances[i,lmin] < 12:
                     self.sight_sensors[idx]=self.num_sight_pts-i
                     break
 
@@ -121,9 +121,9 @@ class Bird:
         a = math.radians(self.angle)
         offset = math.radians(12)
 
-        self.sight_rays[0] = np.array([(self.wrap(self.x+13*i*math.cos(a)),self.wrap(self.y + 13*i*math.sin(a))) for i in range(self.num_sight_pts)])
-        self.sight_rays[1] = np.array([(self.wrap(self.x+13*i*math.cos(a+offset)),self.wrap(self.y + 13*i*math.sin(a+offset))) for i in range(self.num_sight_pts)])
-        self.sight_rays[2] = np.array([(self.wrap(self.x+13*i*math.cos(a-offset)),self.wrap(self.y + 13*i*math.sin(a-offset))) for i in range(self.num_sight_pts)])
+        self.sight_rays[0] = np.array([(self.wrap(self.x+15*i*math.cos(a)),self.wrap(self.y + 15*i*math.sin(a))) for i in range(self.num_sight_pts)])
+        self.sight_rays[1] = np.array([(self.wrap(self.x+15*i*math.cos(a+offset)),self.wrap(self.y + 15*i*math.sin(a+offset))) for i in range(self.num_sight_pts)])
+        self.sight_rays[2] = np.array([(self.wrap(self.x+15*i*math.cos(a-offset)),self.wrap(self.y + 15*i*math.sin(a-offset))) for i in range(self.num_sight_pts)])
 
 
         self.sight_sensors = [0,0,0]
@@ -131,7 +131,7 @@ class Bird:
     def see_predator(self):
         pred_coords = [(p.x,p.y) for p in self.env.predator_birds]
         if self.seen_predator[0]>0:
-            self.seen_predator[0]-=.025
+            self.seen_predator[0]-=.01
         for idx,ray in enumerate(self.sight_rays):
             distances = cdist(ray,pred_coords)
 
@@ -153,7 +153,7 @@ class Bird:
         return x%self.env.env_size
 
     def update(self):
-        self.energy-=.1
+        self.energy-=.2
 
         if self.energy<0:
             self.energy*=.95
