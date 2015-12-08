@@ -1,3 +1,5 @@
+# Just some color definitions to be used in visualization
+
 BLACK = (  0,   0,   1)
 WHITE = (255, 255, 255)
 BLUE = (  0,   0, 255)
