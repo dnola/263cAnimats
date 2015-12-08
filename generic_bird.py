@@ -42,18 +42,29 @@ class Bird:
         self.flapped = 0
 
     def breed(self, other):
+        """
+        Breed is called using two birds of the same class. It performs a
+        single crossover recombination with a 10% chance of mutation - which
+        is intentionally a high rate to encourage genetic diversity
+        """
         e = self.env
-        w1 = self.network.params
+        w1 = self.network.params # get the two sets of weights
         w2 = self.network.params
 
-        crossover = int(random.random() * len(w1))
-        combined = list(w1[:crossover]) + list(w2[crossover:])
+        crossover = int(random.random() * len(w1)) # pick a cross over point
+        combined = list(w1[:crossover]) + list(w2[crossover:]) # splice the
+        # weights
         while random.random() < .1:
             combined[int(random.random() * len(w1))] = random.gauss(0, np.max(
-                np.fabs(combined)))
+                np.fabs(combined))) # randomly permute some weights according
+            #  to a standard deviation that is based on the maximum of the
+            # network. This causes mutations to be roughly the same order as
+            # the weights
 
         b = self.__class__(random.random() * e.env_size,
                            random.random() * e.env_size, e, weights=combined)
+        #actually creates the new object, be it a Social, Generic,
+        # or Predator bird
         return b
 
     def move(self):
@@ -83,39 +94,55 @@ class Bird:
             self.flapped = 20
 
     def get_nearby_birds(self):
+        """
+        Returns a list of birds "within range" of the bird
+        """
         nearby = []
         for bird in self.env.social_birds:
-            if bird.my_id == self.my_id:
+            if bird.my_id == self.my_id: # don't include self, otherwise
+                # birds would hear their own chirps and get confused
                 continue
 
             dist = ((self.x - bird.x) ** 2 + (self.y - bird.y) ** 2) ** .5
+            # euclidean distance
             if dist < 225:
                 nearby.append(bird)
 
         return nearby
 
     def eat(self, tree_id):
-        if self.energy < 50:
-            self.vel *= .5
-            self.env.trees[tree_id].bite()
-            self.energy = 100
-            for bird in self.get_nearby_birds():
+        """
+        Called when a bird attempts to eat food from a tree. If he is
+        capable, he eats, and all nearby birds get a boost to fitness
+        """
+        if self.energy < 50: # If the bird is hungry...
+            self.vel *= .5 # Swoop down to grab it (slow down)
+            self.env.trees[tree_id].bite() # bite it
+            self.energy = 100 # bird is now full
+            for bird in self.get_nearby_birds(): # nearby birds gain .5 fitness
                 self.fitness += .5
-            self.fitness += 1
+            self.fitness += 1 # This bird gains 1 fitness
 
     def see_food(self, food_coords):
+        """
+        uses scipy's cdist and numpy's argmin to rapidly calculate distances
+        between sight rays and food
+        """
         for idx, ray in enumerate(self.sight_rays):
-            distances = cdist(ray, food_coords)
-            min = np.argmin(distances, axis=1)
-            for i in range(self.num_sight_pts):
-                lmin = min[i]
+            distances = cdist(ray, food_coords) # pairwise distance
+            min = np.argmin(distances, axis=1) # gets closest tree to each
+            #  ray point
+            for i in range(self.num_sight_pts): # go through each sight point
+                #  in the ray
+                lmin = min[i] #gets the closest tree to THIS ray point
 
-                if distances[0, lmin] < 15:
+                if distances[0, lmin] < 15: #if it is close to bird, eat it
                     self.eat(lmin)
 
-                if distances[i, lmin] < 12:
+                if distances[i, lmin] < 12: # if it is close to sight ray,
+                    # set the sight neuron
                     self.sight_sensors[idx] = self.num_sight_pts - i
-                    break
+                    break # sight has been obfuscated, stop tracing this ray
 
     def init_sight(self):
         a = math.radians(self.angle)

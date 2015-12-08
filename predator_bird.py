@@ -36,20 +36,29 @@ class PredatorBird(Bird):
             self.flapped = 20 + random.randint(-17, 17)
 
     def eat(self, bird_id):
+        """
+        Predator birds have a slightly more complex eat function. Normally
+        predators don't eat when full, but if a bird is sitting on top of a
+        predator long enough it doesn't make sense to let the bird live.
+        Additionally, full birds are much harder to kill, to prevent predator
+        birds from just sitting on top of trees and eating every bird there
+        """
         if (self.energy < 50 and random.random() > (self.env.social_birds[
                     bird_id].energy / 100 + .1)) or random.random() > .99:
             try:
                 for bird in self.env.social_birds[bird_id].get_nearby_birds():
-                    bird.fitness -= 5
+                    bird.fitness -= 5 # sharp fitness penalty for witnessing
+                    # a death
                 print("Bird eaten")
                 self.vel *= .5
 
                 del (self.env.social_birds[
-                         bird_id])  # =self.env.breed_bird(self.env.social_birds)
+                         bird_id])  # bird is now dead
                 self.energy = 100
                 self.fitness += 1
             except:
-                print("Error when eating bird")
+                print("Error when eating bird") # del() is a risky operation.
+                #  Better be safe.
 
     def see_food(self, food_coords):
         for idx, ray in enumerate(self.sight_rays):
